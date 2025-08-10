@@ -82,6 +82,12 @@
   <br />
 
   <label>
+  単価（価格 ÷ 数量）:
+    <input type="text" id="unitPrice" readonly />
+  </label>
+  <br />
+
+  <label>
     <input type="checkbox" id="newItemMode" /> 新規登録モード
   </label>
   <br />
@@ -149,6 +155,38 @@ document.getElementById("priceForm").addEventListener("submit", async e => {
 
 // ページ読み込み時に品目リストを取得
 window.addEventListener("DOMContentLoaded", fetchItems);
+
+const itemInput = document.getElementById("itemInput");
+const unitPriceInput = document.getElementById("unitPrice");
+
+itemInput.addEventListener("change", async () => {
+  const selectedItem = itemInput.value.trim();
+  if (!selectedItem) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/item_detail?item=${encodeURIComponent(selectedItem)}`);
+    if (!res.ok) throw new Error("底値情報の取得に失敗");
+    const data = await res.json();
+
+    if (data.error) {
+      unitPriceInput.value = "";
+      alert(data.error);
+      return;
+    }
+    
+    // 単価を計算して表示（価格 ÷ 数量）
+    if (data.price && data.quantity) {
+      unitPriceInput.value = (data.price / data.quantity).toFixed(2);
+    } else {
+      unitPriceInput.value = "";
+    }
+
+    // 他に価格や数量を表示したい場合、画面に要素を用意して値セットする
+
+  } catch (err) {
+    console.error(err);
+  }
+});
 </script>
 
 </body>
