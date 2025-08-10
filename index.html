@@ -162,10 +162,14 @@ itemInput.addEventListener("change", async () => {
   const selectedItem = itemInput.value.trim();
   if (!selectedItem) return;
 
+  alert(selectedItem);
+
   try {
     const res = await fetch(`${API_BASE}/item_detail?item=${encodeURIComponent(selectedItem)}`);
     if (!res.ok) throw new Error("底値情報の取得に失敗");
     const data = await res.json();
+
+    alert(data);
 
     if (data.error) {
       unitPriceInput.value = "";
