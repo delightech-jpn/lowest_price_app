@@ -186,6 +186,8 @@ itemInput.addEventListener("change", async () => {
     }
 
     // 他に価格や数量を表示したい場合、画面に要素を用意して値セットする
+    document.getElementById("priceInput").value = data.price;
+    document.getElementById("quantityInput").value = data.quantity;
 
   } catch (err) {
     console.error(err);
