@@ -175,6 +175,7 @@
     const API_BASE = "https://usefultools.onrender.com";
 
     async function loadItems() {
+      document.getElementById("refStatus").textContent = "読み込み中...";
       const res = await fetch(`${API_BASE}/items`);
       const items = await res.json();
       const dl = document.getElementById("items");
@@ -184,6 +185,7 @@
         opt.value = it;
         dl.appendChild(opt);
       });
+      document.getElementById("refStatus").textContent = "";
     }
 
     document.getElementById("itemInput").addEventListener("change", async () => {
