@@ -79,6 +79,7 @@ document.getElementById("itemInput").addEventListener("change", async () => {
   try {
     const res = await fetch(`${API_BASE}/item_detail?item=${encodeURIComponent(itemName)}`);
     const detail = await res.json();
+    alert(detail.error);
 
     if (!detail.error) {
       document.getElementById("refPrice").value = detail.price || "";
