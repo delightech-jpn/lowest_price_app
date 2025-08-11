@@ -92,8 +92,8 @@
 
     button {
       display: block;
-      width: 200px;              /* ← 幅を固定 */
-      margin: 10px auto 0 auto;  /* ← 上10px、左右autoで中央揃え */
+      width: 200px;
+      margin: 10px auto 0 auto;
       padding: 8px;
       font-size: 13px;
       background-color: #007bff;
@@ -150,7 +150,7 @@
     <div class="form-row">
       <label>単価：</label><input type="number" id="inputUnitPrice" readonly>
     </div>
-    <button id="updateBtn">底値更新</button>
+    <button id="updateBtn" disabled="true">底値更新</button>
     <span id="loadingSpinner" style="display:none;">⏳ 更新中...</span>
   </div>
 
@@ -191,7 +191,7 @@
         if (!detail.error) {
           document.getElementById("refPrice").value = detail.price || "";
           document.getElementById("refQty").value = detail.quantity || "";
-          document.getElementById("refUnitPrice").value = detail.unit_price || "";
+          document.getElementById("refUnitPrice").value = detail.unit_price.toFixed(3) || "";
           document.getElementById("refStatus").textContent = "";
         } else {
           document.getElementById("refStatus").textContent = "該当データなし";
@@ -206,7 +206,7 @@
       document.getElementById(id).addEventListener("input", () => {
         const price = parseFloat(document.getElementById("inputPrice").value) || 0;
         const qty = parseFloat(document.getElementById("inputQty").value) || 0;
-        const unit = qty > 0 ? (price / qty).toFixed(2) : "";
+        const unit = qty > 0 ? parseFloat((price / qty).toFixed(3)) : ""; "";
         document.getElementById("inputUnitPrice").value = unit;
         checkUpdateButton();
       });
@@ -247,7 +247,7 @@
         alert("更新失敗: " + err.message);
       } finally {
         // 🔓 UI解除
-        updateBtn.disabled = false;
+        updateBtn.disabled = true;
         updateBtn.textContent = "底値更新";
         spinner.style.display = "none";
       }
