@@ -267,9 +267,12 @@
     });
 
     document.getElementById("clearBtn").addEventListener("click", () => {
+      const updateBtn = document.getElementById("updateBtn");
+
       document.getElementById("inputPrice").value = "";
       document.getElementById("inputQty").value = "";
       document.getElementById("inputUnitPrice").value = "";
+      updateBtn.disabled = true;
     });
 
     loadItems();
