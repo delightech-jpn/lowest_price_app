@@ -144,7 +144,8 @@
     <div class="form-row">
       <label>単価：</label><input type="number" id="inputUnitPrice" readonly>
     </div>
-    <button id="updateBtn" disabled>底値更新</button>
+    <button id="updateBtn">底値更新</button>
+    <span id="loadingSpinner" style="display:none;">⏳ 更新中...</span>
   </div>
 
   <script>
@@ -210,21 +211,38 @@
     }
 
     document.getElementById("updateBtn").addEventListener("click", async () => {
+      const updateBtn = document.getElementById("updateBtn");
+      const spinner = document.getElementById("loadingSpinner");
       const itemName = document.getElementById("itemInput").value.trim();
-      const payload = {
-        item: itemName,
-        price: parseFloat(document.getElementById("inputPrice").value),
-        quantity: parseFloat(document.getElementById("inputQty").value),
-        newItemMode: !(document.querySelector(`#items option[value="${itemName}"]`))
-      };
-      const res = await fetch(`${API_BASE}/update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      alert("更新結果: " + JSON.stringify(await res.json()));
-      loadItems();
-      await loadItemDetail(itemName);
+
+      // 🔒 UIロック
+      updateBtn.disabled = true;
+      updateBtn.textContent = "更新中...";
+      spinner.style.display = "inline";
+
+      try {
+        const payload = {
+          item: itemName,
+          price: parseFloat(document.getElementById("inputPrice").value),
+          quantity: parseFloat(document.getElementById("inputQty").value),
+          newItemMode: !(document.querySelector(`#items option[value="${itemName}"]`))
+        };
+        const res = await fetch(`${API_BASE}/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        alert("更新結果: " + JSON.stringify(await res.json()));
+        loadItems();
+        await loadItemDetail(itemName);
+      } catch (err) {
+        alert("更新失敗: " + err.message);
+      } finally {
+        // 🔓 UI解除
+        updateBtn.disabled = false;
+        updateBtn.textContent = "底値更新";
+        spinner.style.display = "none";
+      }
     });
 
     loadItems();
