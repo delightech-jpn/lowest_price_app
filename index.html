@@ -150,9 +150,9 @@
     <div id="refStatus" class="loading"></div>
   </div>
 
-  <div class="section">
+  <div class="section" id="section">
     <div class="section-header">
-      <h2>入力情報</h2><button type="button" id="clearBtn" class="small-btn">クリア</button>
+      <h2>入力情報1</h2><button type="button" id="clearBtn" class="small-btn">クリア</button>
     </div>
     <div class="form-row">
       <label>価格：</label><input type="number" id="inputPrice">
@@ -166,10 +166,26 @@
     <button id="updateBtn" disabled="true">底値更新</button>
     <span id="loadingSpinner" style="display:none;">⏳ 更新中...</span>
   </div>
-
+  <div class="section" id="section2">
+    <div class="section-header">
+      <h2>入力情報2</h2><button type="button" id="clearBtn2" class="small-btn">クリア</button>
+    </div>
+    <div class="form-row">
+      <label>価格：</label><input type="number" id="inputPrice2">
+    </div>
+    <div class="form-row">
+      <label>数量：</label><input type="number" id="inputQty2">
+    </div>
+    <div class="form-row">
+      <label>単価：</label><input type="number" id="inputUnitPrice2" readonly>
+    </div>
+    <button id="updateBtn2" disabled="true">底値更新</button>
+    <span id="loadingSpinner2" style="display:none;">⏳ 更新中...</span>
+  </div>
   <script>
     const API_BASE = "https://usefultools.onrender.com";
 
+    /* 品目読み込み */
     async function loadItems() {
       document.getElementById("refStatus").textContent = "読み込み中...";
       const res = await fetch(`${API_BASE}/items`);
@@ -184,11 +200,13 @@
       document.getElementById("refStatus").textContent = "";
     }
 
+    /* 品目選択 */
     document.getElementById("itemInput").addEventListener("change", async () => {
       const itemName = document.getElementById("itemInput").value.trim();
       loadItemDetail(itemName);
     });
 
+    /* 参照情報更新 */
     async function loadItemDetail(itemName) {
       if (!itemName) return;
 
@@ -213,8 +231,10 @@
         document.getElementById("refStatus").textContent = "取得失敗";
       }
       checkUpdateButton();
+      checkUpdateButton2();
     }
 
+    /* 単価計算 */
     ["inputPrice", "inputQty"].forEach(id => {
       document.getElementById(id).addEventListener("input", () => {
         const price = parseFloat(document.getElementById("inputPrice").value) || 0;
@@ -224,19 +244,72 @@
         checkUpdateButton();
       });
     });
+    ["inputPrice2", "inputQty2"].forEach(id => {
+      document.getElementById(id).addEventListener("input", () => {
+        const price = parseFloat(document.getElementById("inputPrice2").value) || 0;
+        const qty = parseFloat(document.getElementById("inputQty2").value) || 0;
+        const unit = qty > 0 ? parseFloat((price / qty).toFixed(3)) : ""; "";
+        document.getElementById("inputUnitPrice2").value = unit;
+        checkUpdateButton2();
+      });
+    });
 
+    /* 底値更新ボタン活性非活性 */
     function checkUpdateButton() {
       const inputUnit = parseFloat(document.getElementById("inputUnitPrice").value) || Infinity;
       const refUnit = parseFloat(document.getElementById("refUnitPrice").value) || Infinity;
       document.getElementById("updateBtn").disabled = !(inputUnit < refUnit);
+
+      const section1 = document.getElementById("section")
+      const section2 = document.getElementById("section2")
+      const inputUnit2 = parseFloat(document.getElementById("inputUnitPrice2").value) || Infinity;
+
+      if(inputUnit === Infinity || inputUnit2 === Infinity){
+          section1.style.border = '1px solid #ccc';
+          section2.style.border = '1px solid #ccc';
+      }
+      else{
+        if(inputUnit < inputUnit2){
+          section1.style.border = '3px solid red';
+          section2.style.border = '1px solid #ccc';
+        }
+        else{
+          section1.style.border = '1px solid #ccc';
+          section2.style.border = '3px solid red';
+        }
+      }
+    }
+    function checkUpdateButton2() {
+      const inputUnit2 = parseFloat(document.getElementById("inputUnitPrice2").value) || Infinity;
+      const refUnit = parseFloat(document.getElementById("refUnitPrice").value) || Infinity;
+      document.getElementById("updateBtn2").disabled = !(inputUnit2 < refUnit);
+
+      const section1 = document.getElementById("section")
+      const section2 = document.getElementById("section2")
+      const inputUnit = parseFloat(document.getElementById("inputUnitPrice").value) || Infinity;
+
+      if(inputUnit === Infinity || inputUnit2 === Infinity){
+          section1.style.border = '1px solid #ccc';
+          section2.style.border = '1px solid #ccc';
+      }
+      else{
+        if(inputUnit < inputUnit2){
+          section1.style.border = '3px solid red';
+          section2.style.border = '1px solid #ccc';
+        }
+        else{
+          section1.style.border = '1px solid #ccc';
+          section2.style.border = '3px solid red';
+        }
+      }
     }
 
+    /* 底値更新ボタン */
     document.getElementById("updateBtn").addEventListener("click", async () => {
       const updateBtn = document.getElementById("updateBtn");
       const spinner = document.getElementById("loadingSpinner");
       const itemName = document.getElementById("itemInput").value.trim();
 
-      // 🔒 UIロック
       updateBtn.disabled = true;
       updateBtn.textContent = "更新中...";
       spinner.style.display = "inline";
@@ -265,7 +338,42 @@
         spinner.style.display = "none";
       }
     });
+    document.getElementById("updateBtn2").addEventListener("click", async () => {
+      const updateBtn = document.getElementById("updateBtn2");
+      const spinner = document.getElementById("loadingSpinner2");
+      const itemName = document.getElementById("itemInput").value.trim();
 
+      // 🔒 UIロック
+      updateBtn.disabled = true;
+      updateBtn.textContent = "更新中...";
+      spinner.style.display = "inline";
+
+      try {
+        const payload = {
+          item: itemName,
+          price: parseFloat(document.getElementById("inputPrice2").value),
+          quantity: parseFloat(document.getElementById("inputQty2").value),
+          newItemMode: !(document.querySelector(`#items option[value="${itemName}"]`))
+        };
+        const res = await fetch(`${API_BASE}/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        alert("更新結果: " + JSON.stringify(await res.json()));
+        loadItems();
+        await loadItemDetail(itemName);
+      } catch (err) {
+        alert("更新失敗: " + err.message);
+      } finally {
+        // 🔓 UI解除
+        updateBtn.disabled = true;
+        updateBtn.textContent = "底値更新";
+        spinner.style.display = "none";
+      }
+    });
+
+    /* クリアボタン */
     document.getElementById("clearBtn").addEventListener("click", () => {
       const updateBtn = document.getElementById("updateBtn");
 
@@ -273,6 +381,24 @@
       document.getElementById("inputQty").value = "";
       document.getElementById("inputUnitPrice").value = "";
       updateBtn.disabled = true;
+
+      const section1 = document.getElementById("section")
+      const section2 = document.getElementById("section2")
+      section1.style.border = '1px solid #ccc';
+      section2.style.border = '1px solid #ccc';
+    });
+    document.getElementById("clearBtn2").addEventListener("click", () => {
+      const updateBtn2 = document.getElementById("updateBtn2");
+
+      document.getElementById("inputPrice2").value = "";
+      document.getElementById("inputQty2").value = "";
+      document.getElementById("inputUnitPrice2").value = "";
+      updateBtn2.disabled = true;
+
+      const section1 = document.getElementById("section")
+      const section2 = document.getElementById("section2")
+      section1.style.border = '1px solid #ccc';
+      section2.style.border = '1px solid #ccc';
     });
 
     loadItems();
