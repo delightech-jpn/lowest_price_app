@@ -31,15 +31,15 @@
     }
 
     #itemLabel {
-      width: 100px;
-      text-align: right;
+      width: 60px;
+      text-align: center;
       margin-right: 10px;
       font-weight: bold;
       font-size: 13px;
     }
 
     #itemInput {
-      width: 200px;
+      width: 150px;
       padding: 6px;
       font-size: 13px;
     }
@@ -59,7 +59,7 @@
       margin-top: 0;
       font-size: 15px;
       margin-bottom: 6px;
-      text-align: center;
+      text-align: left;
     }
 
     .form-row {
@@ -71,10 +71,12 @@
     }
 
     .form-row label {
-      width: 90px;
-      text-align: right;
+      width: 60px;
+      text-align: center;
       font-weight: bold;
       font-size: 13px;
+      border-width: 2px;
+      /* border-style: solid;*/
     }
 
     .form-row input {
@@ -82,24 +84,6 @@
       font-size: 13px;
       box-sizing: border-box;
       width: 180px;
-    }
-
-    .input-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .input-row label {
-      width: 100px;
-      text-align: right;
-    }
-
-    .input-row input {
-      flex: 1;
-      max-width: 200px;
     }
 
     input[readonly] {
@@ -118,7 +102,6 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
 
     button:disabled {
       background-color: #ccc;
@@ -144,7 +127,6 @@
 
   <div class="section">
     <h2>参照情報（底値）</h2>
-    <div id="refStatus" class="loading"></div>
     <div class="form-row">
       <label>価格：</label><input type="number" id="refPrice" readonly>
     </div>
@@ -154,6 +136,7 @@
     <div class="form-row">
       <label>単価：</label><input type="number" id="refUnitPrice" readonly>
     </div>
+    <div id="refStatus" class="loading"></div>
   </div>
 
   <div class="section">
