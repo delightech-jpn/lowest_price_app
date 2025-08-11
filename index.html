@@ -1,199 +1,137 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>底値管理アプリ</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
-      padding: 15px;
-      max-width: 480px;
-      margin: auto;
-      background: #fafafa;
-      color: #222;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: 600;
-      font-size: 1.1em;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 12px 10px;
-      margin-top: 6px;
-      font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 14px 0;
-      font-size: 1.2em;
-      background-color: #0078d7;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #005a9e;
-    }
-    #result {
-      margin-top: 25px;
-      background: white;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
-      font-size: 1em;
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>底値管理アプリ</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  .container { display: flex; gap: 40px; }
+  .column { 
+    flex: 1; 
+    border: 2px solid #ccc; 
+    border-radius: 8px; 
+    padding: 15px; 
+    background-color: #fafafa;
+  }
+  label { display: block; margin: 10px 0; }
+  input[readonly] { background-color: #f0f0f0; }
+  button { margin-top: 20px; padding: 5px 15px; }
+  h2 { margin-top: 0; }
+  .loading { color: #888; font-style: italic; }
+</style>
 </head>
-
 <body>
 <h1>底値管理アプリ</h1>
 
-<form id="priceForm">
-  <label>
-    品目:
+<label>
+    品目：
     <input list="items" name="item" id="itemInput" required />
     <datalist id="items"></datalist>
-  </label>
-  <br />
+</label>
 
-  <label>
-    価格:
-    <input type="number" name="price" id="priceInput" step="0.01" required />
-  </label>
-  <br />
+<div class="container">
+  <!-- 左側：参照エリア -->
+  <div class="column">
+    <h2>参照情報（底値）</h2>
+    <div id="refStatus" class="loading"></div>
+    <label>価格：<input type="number" id="refPrice" readonly></label>
+    <label>数量：<input type="number" id="refQty" readonly></label>
+    <label>単価：<input type="number" id="refUnitPrice" readonly></label>
+  </div>
 
-  <label>
-    数量:
-    <input type="number" name="quantity" id="quantityInput" step="1" required />
-  </label>
-  <br />
-
-  <label>
-  単価（価格 ÷ 数量）:
-    <input type="text" id="unitPrice" readonly />
-  </label>
-  <br />
-
-  <label>
-    <input type="checkbox" id="newItemMode" /> 新規登録モード
-  </label>
-  <br />
-
-  <button type="submit">登録・更新</button>
-</form>
-<div id="result"></div>
+  <!-- 右側：入力エリア -->
+  <div class="column">
+    <h2>入力情報</h2>
+    <label>価格：<input type="number" id="inputPrice"></label>
+    <label>数量：<input type="number" id="inputQty"></label>
+    <label>単価：<input type="number" id="inputUnitPrice" readonly></label>
+    <button id="updateBtn" disabled>底値更新</button>
+  </div>
+</div>
 
 <script>
 const API_BASE = "https://usefultools.onrender.com"; // FastAPIのURLに置き換えてください
 
-// 品目リストを取得してdatalistにセット
-async function fetchItems() {
-  try {
-    const res = await fetch(`${API_BASE}/items`);
-    if (!res.ok) throw new Error("品目リストの取得に失敗しました");
-    const items = await res.json();
-    const datalist = document.getElementById("items");
-    datalist.innerHTML = "";
-    items.forEach(item => {
-      const option = document.createElement("option");
-      option.value = item;
-      datalist.appendChild(option);
-    });
-  } catch (err) {
-    console.error(err);
-  }
+// 初期化：品目リスト取得
+async function loadItems() {
+  const res = await fetch(`${API_BASE}/items`);
+  const items = await res.json();
+  const dl = document.getElementById("items");
+  dl.innerHTML = "";
+  items.forEach(it => {
+    const opt = document.createElement("option");
+    opt.value = it;
+    dl.appendChild(opt);
+  });
 }
 
-// フォーム送信処理
-document.getElementById("priceForm").addEventListener("submit", async e => {
-  e.preventDefault();
+// 品目選択/入力時に詳細取得
+document.getElementById("itemInput").addEventListener("change", async () => {
+  const itemName = document.getElementById("itemInput").value.trim();
+  if (!itemName) return;
 
-  const item = document.getElementById("itemInput").value.trim();
-  const price = parseFloat(document.getElementById("priceInput").value);
-  const quantity = parseInt(document.getElementById("quantityInput").value, 10);
-  const newItemMode = document.getElementById("newItemMode").checked;
-
-  if (!item || isNaN(price) || isNaN(quantity) || price <= 0 || quantity <= 0) {
-    alert("正しい値を入力してください");
-    return;
-  }
-
-  const payload = { item, price, quantity, newItemMode };
+  // 読み込み中表示
+  document.getElementById("refStatus").textContent = "読み込み中...";
+  document.getElementById("refPrice").value = "";
+  document.getElementById("refQty").value = "";
+  document.getElementById("refUnitPrice").value = "";
 
   try {
-    const res = await fetch(`${API_BASE}/update`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
+    const res = await fetch(`${API_BASE}/item_detail?item=${encodeURIComponent(itemName)}`);
+    const detail = await res.json();
 
-    document.getElementById("result").textContent = data.message || JSON.stringify(data);
-    if (data.status === "added" || data.status === "updated") {
-      // 更新成功なら品目リストを再取得して反映（新規登録もカバー）
-      await fetchItems();
-    }
-  } catch (err) {
-    document.getElementById("result").textContent = "送信に失敗しました";
-    console.error(err);
-  }
-});
-
-// ページ読み込み時に品目リストを取得
-window.addEventListener("DOMContentLoaded", fetchItems);
-
-const itemInput = document.getElementById("itemInput");
-const unitPriceInput = document.getElementById("unitPrice");
-
-itemInput.addEventListener("change", async () => {
-  const selectedItem = itemInput.value.trim();
-  if (!selectedItem) return;
-
-  alert(selectedItem);
-
-  try {
-    const res = await fetch(`${API_BASE}/item_detail?item=${encodeURIComponent(selectedItem)}`);
-    if (!res.ok) throw new Error("底値情報の取得に失敗");
-    const data = await res.json();
-
-    if (data.error) {
-      unitPriceInput.value = "";
-      alert(data.error);
-      return;
-    }
-
-    alert(data.price);
-    alert(data.quantity);
-
-    // 単価を計算して表示（価格 ÷ 数量）
-    if (data.price && data.quantity) {
-      unitPriceInput.value = (data.price / data.quantity).toFixed(2);
+    if (!detail.error) {
+      document.getElementById("refPrice").value = detail.price || "";
+      document.getElementById("refQty").value = detail.quantity || "";
+      document.getElementById("refUnitPrice").value = detail.unit_price || "";
+      document.getElementById("refStatus").textContent = ""; // 取得完了で消す
     } else {
-      unitPriceInput.value = "";
+      document.getElementById("refStatus").textContent = "該当データなし";
     }
-
-    // 他に価格や数量を表示したい場合、画面に要素を用意して値セットする
-    document.getElementById("priceInput").value = data.price;
-    document.getElementById("quantityInput").value = data.quantity;
-
   } catch (err) {
-    console.error(err);
+    document.getElementById("refStatus").textContent = "取得失敗";
   }
+  checkUpdateButton();
 });
-</script>
 
+// 入力単価自動計算
+["inputPrice", "inputQty"].forEach(id => {
+  document.getElementById(id).addEventListener("input", () => {
+    const price = parseFloat(document.getElementById("inputPrice").value) || 0;
+    const qty = parseFloat(document.getElementById("inputQty").value) || 0;
+    const unit = qty > 0 ? (price / qty).toFixed(2) : "";
+    document.getElementById("inputUnitPrice").value = unit;
+    checkUpdateButton();
+  });
+});
+
+// 更新ボタン有効化判定
+function checkUpdateButton() {
+  const inputUnit = parseFloat(document.getElementById("inputUnitPrice").value) || Infinity;
+  const refUnit = parseFloat(document.getElementById("refUnitPrice").value) || Infinity;
+  document.getElementById("updateBtn").disabled = !(inputUnit < refUnit);
+}
+
+// 更新ボタンクリック
+document.getElementById("updateBtn").addEventListener("click", async () => {
+  const itemName = document.getElementById("itemInput").value.trim();
+  const payload = {
+    item: itemName,
+    price: parseFloat(document.getElementById("inputPrice").value),
+    quantity: parseFloat(document.getElementById("inputQty").value),
+    newItemMode: !(document.querySelector(`#items option[value="${itemName}"]`))
+  };
+  const res = await fetch(`${API_BASE}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  alert("更新結果: " + JSON.stringify(await res.json()));
+  loadItems();
+});
+
+// ページ初期化
+loadItems();
+</script>
 </body>
 </html>
