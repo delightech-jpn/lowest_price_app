@@ -28,13 +28,13 @@
     }
 
     .form-row label {
-      flex: 0 0 80px; /* ← ラベル幅固定 */
+      flex: 0 0 34%; /* ラベル幅：約1/3 */
       font-weight: bold;
       font-size: 13px;
     }
 
     .form-row input {
-      flex: 1;
+      flex: 0 0 66%; /* 入力欄幅：約2/3 */
       padding: 6px;
       font-size: 13px;
       box-sizing: border-box;
@@ -44,8 +44,25 @@
       background-color: #f0f0f0;
     }
 
+    #itemRow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    #itemLabel {
+      width: 100px;
+      text-align: right;
+      margin-right: 10px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
     #itemInput {
-      width: 70%; /* ← 品目入力欄の幅を狭く */
+      width: 200px;
+      padding: 6px;
+      font-size: 13px;
     }
 
     button {
@@ -89,11 +106,18 @@
 <body>
   <h1>底値管理アプリ</h1>
 
-  <div class="form-row">
-    <label for="itemInput">品目：</label>
+  <div id="itemRow">
+    <label id="itemLabel" for="itemInput">品目：</label>
     <input list="items" name="item" id="itemInput" required />
     <datalist id="items"></datalist>
   </div>
+
+
+  <!-- <div class="form-row">
+    <label for="itemInput">品目：</label>
+    <input list="items" name="item" id="itemInput" required />
+    <datalist id="items"></datalist>
+  </div> -->
 
   <div class="section">
     <h2>参照情報（底値）</h2>
